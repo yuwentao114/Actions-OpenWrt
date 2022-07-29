@@ -126,7 +126,6 @@ jobs:
         md5=$((md5sum *squashfs-combined-efi.i*) | awk '{print $1}') 2>/dev/null
         echo $md5 >> version.txt
         rename -v "s/openwrt/${{ env.VERSION }}-openwrt/" * || true
-        rename -v "s/friendlyarm_//" *gz || true
         echo $md5 >> version.txt
         echo ${{matrix.target}} >> version.txt     
         rm -rf sha256sums
