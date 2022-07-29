@@ -117,18 +117,18 @@ jobs:
       run: |
         mkdir -p firmware
         mkdir -p firmware/package/
-        mv -f openwrt/bin/targets/*/*/{*combined-efi.i*,*sysupgrade*} ./firmware/ 2>/dev/null || true
+        mv -f openwrt/bin/targets/*/*/{*squashfs-combined-efi.i*gz} ./firmware/ 2>/dev/null || true
         cp $(find openwrt/bin/packages/ -type f -name "*.ipk") ./firmware/package/
         cp openwrt/.config  ./firmware/${{matrix.target}}.config
         cp openwrt/build_dir/target-*/linux-*/linux-*/.config ./firmware/${{matrix.target}}_kernel.config
         cd firmware
+        rename -v 's/^/${{ env.VERSION }}-/' *gz || true
         echo "${{ env.VERSION }}" > version.txt
-        md5=$((md5sum *squashfs-combined-efi.i*) | awk '{print $1}') 2>/dev/null
+        md5=$((md5sum *squashfs-combined-efi.i*gz) | awk '{print $1}') 2>/dev/null
         echo $md5 >> version.txt
-        rename -v "s/openwrt/${{ env.VERSION }}-openwrt/" * || true
-        echo $md5 >> version.txt
-        echo ${{matrix.target}} >> version.txt     
-        rm -rf sha256sums
+        echo ${{matrix.target}} >> version.txt 
+        sha256sums=$((sha256sums *squashfs-combined-efi.i*gz) | awk '{print $1}') 2>/dev/null
+        echo $sha256sums > sha256sums
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "::set-output name=status::success"
 
