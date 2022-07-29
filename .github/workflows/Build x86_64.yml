@@ -155,7 +155,7 @@ jobs:
       with:
         files: "${{ env.FIRMWARE }}/*"
         name: ${{ env.VERSION }} ${{matrix.target}}
-        tag_name: ${{ env.VERSION }} ${{matrix.target}}
+        tag_name: ${{matrix.target}}
         body_path: release.txt
 
     - name: Delete workflow runs
