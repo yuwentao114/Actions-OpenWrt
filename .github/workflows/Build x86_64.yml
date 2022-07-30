@@ -55,6 +55,7 @@ jobs:
         echo "date2=$(date +'%m/%d %Y')" >> $GITHUB_ENV
         echo "date3=$(date +'%m.%d')" >> $GITHUB_ENV
         echo "date4=$(date +'%m.%d.%H')" >> $GITHUB_ENV
+        echo "date5=$(date +'%m.%d.%Y')" >> $GITHUB_ENV
         VERSION="$(echo "${{github.event.action}}" | grep -Eo " [0-9.]+" | sed -e 's/ //')" || true
         [ "$VERSION" ] && echo "VERSION=$VERSION" >> $GITHUB_ENV || echo "VERSION=$(date +'%m.%d')" >> $GITHUB_ENV
 
@@ -115,7 +116,7 @@ jobs:
       working-directory: ./openwrt
       run: |
         cd bin/targets/x86/64/
-        rename -v 's/^/${{ env.date4 }}-/' openwrt*.gz || true
+        rename -v 's/^/${{ env.date5 }}-/' openwrt*.gz || true
 
     - name: 整理文件
       id: organize
@@ -128,7 +129,7 @@ jobs:
         cp openwrt/.config  ./firmware/${{matrix.target}}.config
         cp openwrt/build_dir/target-*/linux-*/linux-*/.config ./firmware/${{matrix.target}}_kernel.config
         cd firmware
-        echo "${{ env.date4 }}" > version.txt
+        echo "${{ env.date5 }}" > version.txt
         md5=$((md5sum *squashfs-combined-efi.i*gz) | awk '{print $1}') 2>/dev/null
         echo $md5 >> version.txt
         echo ${{matrix.target}} >> version.txt
@@ -140,14 +141,14 @@ jobs:
       uses: actions/upload-artifact@main
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
-        name: ${{ env.date4 }} ${{matrix.target}}
+        name: ${{ env.date5 }} ${{matrix.target}}
         path: ${{ env.FIRMWARE }}
 
     - name: 生成发布标签
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
-        echo "::set-output name=release_tag::${{ env.date4 }}"
+        echo "::set-output name=release_tag::${{ env.date5 }}"
         touch release.txt
         echo "::set-output name=status::success"
 
@@ -158,7 +159,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         files: "${{ env.FIRMWARE }}/*"
-        name: ${{ env.date4 }} ${{matrix.target}}
+        name: ${{ env.date5 }} ${{matrix.target}}
         tag_name: ${{matrix.target}}
         body_path: release.txt
 
