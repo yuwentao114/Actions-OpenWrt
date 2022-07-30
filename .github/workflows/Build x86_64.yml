@@ -111,24 +111,27 @@ jobs:
       if: (!cancelled())
       run: df -hT
 
+    - name: Rename files
+      working-directory: ./openwrt
+      run: |
+        cd bin/targets/x86/64/
+        rename -v 's/^/${{ env.date4 }}-/' openwrt*.gz || true
+
     - name: Organize files
       id: organize
       if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
       run: |
         mkdir -p firmware
         mkdir -p firmware/package/
-        mv -f openwrt/bin/targets/*/*/{*squashfs-combined-efi.i*gz,*sysupgrade*} ./firmware/ 2>/dev/null || true
+        mv -f openwrt/bin/targets/x86/64/{*squashfs-combined-efi.i*gz,*sysupgrade*} ./firmware/ 2>/dev/null || true
         cp $(find openwrt/bin/packages/ -type f -name "*.ipk") ./firmware/package/
         cp openwrt/.config  ./firmware/${{matrix.target}}.config
         cp openwrt/build_dir/target-*/linux-*/linux-*/.config ./firmware/${{matrix.target}}_kernel.config
         cd firmware
-        rename -v 's/^/${{ env.VERSION }}-/' *gz || true
-        echo "${{ env.VERSION }}" > version.txt
+        echo "${{ env.VERSION }}.$(date +'%Y')" > version.txt
         md5=$((md5sum *squashfs-combined-efi.i*gz) | awk '{print $1}') 2>/dev/null
         echo $md5 >> version.txt
         echo ${{matrix.target}} >> version.txt
-        sha256sums=$((sha256sums *squashfs-combined-efi.i*gz) | awk '{print $1}') 2>/dev/null
-        echo $sha256sums > sha256sums.txt
         rm -rf sha256sums
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "::set-output name=status::success"
@@ -137,7 +140,7 @@ jobs:
       uses: actions/upload-artifact@main
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
-        name: ${{ env.VERSION }} ${{matrix.target}}
+        name: ${{ env.VERSION }}.$(date +'%Y') ${{matrix.target}}
         path: ${{ env.FIRMWARE }}
 
     - name: Generate release tag
@@ -155,7 +158,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         files: "${{ env.FIRMWARE }}/*"
-        name: ${{ env.VERSION }} ${{matrix.target}}
+        name: ${{ env.VERSION }}.$(date +'%Y') ${{matrix.target}}
         tag_name: ${{matrix.target}}
         body_path: release.txt
 
